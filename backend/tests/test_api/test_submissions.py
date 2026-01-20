@@ -30,7 +30,7 @@ async def test_submit_file(client: AsyncClient, db):
         
         # 3. Upload File
         files = {"file": ("eicar.txt", b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*", "text/plain")}
-        response = await client.post("/api/v1/submit/", files=files, headers=headers)
+        response = await client.post("/api/v1/submissions/", files=files, headers=headers)
         
         assert response.status_code == 200
         data = response.json()

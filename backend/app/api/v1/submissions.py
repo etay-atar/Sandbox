@@ -4,11 +4,11 @@ Submission API Routes
 Endpoints for submitting files and checking analysis status.
 Includes 'Mock' logic for simulating analysis delay.
 """
-from typing import Any
+from typing import Any, List
 import hashlib
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, desc
 
 from app.api import deps
 from app.db.session import get_db
@@ -17,6 +17,25 @@ from app.schemas import schemas
 from app.services.storage import storage_service
 
 router = APIRouter()
+
+@router.get("/", response_model=List[schemas.SubmissionResponse])
+async def get_submissions(
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Retrieve recent submissions.
+    """
+    result = await db.execute(
+        select(Submission)
+        .order_by(desc(Submission.created_at))
+        .offset(skip)
+        .limit(limit)
+    )
+    submissions = result.scalars().all()
+    return submissions
 
 @router.post("/", response_model=schemas.SubmissionResponse)
 async def submit_file(
