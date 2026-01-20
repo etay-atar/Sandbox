@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Sandbox - Backend Onboarding Guide</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f8fafc;
+            --text-color: #334155;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --accent: #0ea5e9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        header p {
+            margin-top: 1rem;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+
+        h3 {
+            color: var(--primary-color);
+            margin-top: 1.5rem;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: #e2e8f0;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: #d946ef;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .note {
+            background-color: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .tip {
+            background-color: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        ul {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Backend Onboarding Guide</h1>
+    <p>Everything you need to know to run, test, and understand the Cybersecurity Sandbox Backend.</p>
+</header>
+
+<div class="container">
+
+    <!-- Section 1: Introduction -->
+    <div class="card">
+        <h2>1. Introduction</h2>
+        <p>Welcome to the <strong>Cybersecurity Sandbox Backend</strong>! This system is the "Brain" of our malware analysis platform. It is responsible for:</p>
+        <ul>
+            <li><strong>Handling Users:</strong> Secure login and registration.</li>
+            <li><strong>Ingesting Files:</strong> Receiving suspicious files and storing them safely.</li>
+            <li><strong>Orchestrating Analysis:</strong> Managing the queue of files waiting to be detonated.</li>
+            <li><strong>Reporting:</strong> Aggregating results from Static Analysis, Dynamic Analysis (VMs), and AI models.</li>
+        </ul>
+        <p>Currently, we are running a <strong>Mock Backend</strong>. This means the core architecture (Database, API, Auth) is real and production-ready, but the heavy "Malware Detonation" part is simulated. This allows us to develop the UI and API clients without needing 5 heavy Virtual Machines running on your laptop.</p>
+    </div>
+
+    <!-- Section 2: Architecture & Tech Stack -->
+    <div class="card">
+        <h2>2. Technical Architecture</h2>
+        <p>We use a modern, high-performance stack designed for asynchronous processing.</p>
+        
+        <h3>The Stack</h3>
+        <ul>
+            <li><strong>Python 3.10+ & FastAPI:</strong> Our web framework. It builds the API endpoints (URLs) that the frontend talks to. It uses <code>async/await</code> to handle thousands of requests without freezing.</li>
+            <li><strong>PostgreSQL 15:</strong> Our primary database. It stores User accounts, Submission metadata (filename, hash), and the final Reports.</li>
+            <li><strong>SQLAlchemy (Async):</strong> The tool we use to talk to the database effectively using Python objects instead of raw SQL queries.</li>
+            <li><strong>MinIO (S3 Compatible):</strong> A specialized storage system for files. We store the actual malware binaries here, NOT in the database. It simulates AWS S3.</li>
+            <li><strong>Redis:</strong> A super-fast in-memory storage. We use it for the Task Queue (holding jobs for workers) and caching status updates.</li>
+        </ul>
+
+        <div class="note">
+            <strong>Clean Architecture:</strong> The code is organized by "domain".
+            <br>
+            <code>app/api</code> holds the routes.
+            <br>
+            <code>app/services</code> holds external logic (like MinIO).
+            <br>
+            <code>app/core</code> holds config and security.
+        </div>
+    </div>
+
+    <!-- Section 3: Getting Started (How to Run) -->
+    <div class="card">
+        <h2>3. How to Run the System</h2>
+        <p>Follow these steps to get the system running on your local machine.</p>
+
+        <h3>Step 1: Start Infrastructure</h3>
+        <p>We use Docker to run the database and storage services so you don't have to install them manually.</p>
+        <pre><code>docker-compose up -d</code></pre>
+        <p>This starts Postgres (Port 5432), Redis (Port 6379), and MinIO (Port 9000/9001).</p>
+
+        <h3>Step 2: Python Setup</h3>
+        <p>Create a virtual environment to keep your dependencies isolated.</p>
+        <pre><code># Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt</code></pre>
+
+        <h3>Step 3: Database Migrations</h3>
+        <p>We need to create the tables in the new Postgres database. We use <strong>Alembic</strong> for this.</p>
+        <pre><code># Initialize the tables
+alembic upgrade head</code></pre>
+
+        <h3>Step 4: Run the API Server</h3>
+        <p>Start the FastAPI server using Uvicorn (the web server).</p>
+        <pre><code>uvicorn app.main:app --reload</code></pre>
+        <p>The <code>--reload</code> flag means if you verify a file, the server restarts automatically.</p>
+
+        <div class="tip">
+            <strong>Success!</strong> Go to <a href="http://localhost:8000/docs" target="_blank">http://localhost:8000/docs</a>. You should see the interactive Swagger UI.
+        </div>
+    </div>
+
+    <!-- Section 4: Understanding the "Mock" Backend -->
+    <div class="card">
+        <h2>4. The "Mock" Simulation</h2>
+        <p>You might wonder: <em>"If I upload a file, what actually analyzes it?"</em></p>
+        <p>Right now, the <strong>Mock Logic</strong> inside <code>app/api/v1/submissions.py</code> simulates the process.</p>
+
+        <h3>How it works:</h3>
+        <ol>
+            <li><strong>Upload:</strong> You POST a file to <code>/api/v1/submit/</code>. The server saves it to MinIO and sets status to <code>QUEUED</code>.</li>
+            <li><strong>Status Check (The Sim):</strong> When you call <code>GET /api/v1/submit/{id}/status</code>, the code performs a "magic trick":
+                <ul>
+                    <li>If it sees the status is <code>QUEUED</code>, it automatically flips it to <code>PROCESSING</code>.</li>
+                    <li>If it is <code>PROCESSING</code>, it rolls a virtual dice (random number). If the number is high enough, it marks the job as <code>COMPLETED</code> and assigns a Mock Verdict (Malicious).</li>
+                </ul>
+            </li>
+            <li><strong>Result:</strong> This makes it <em>feel</em> like work is happening over time, allowing you to test progress bars in the UI.</li>
+        </ol>
+
+        <p>The <strong>Report Endpoint</strong> (<code>/report</code>) returns a hardcoded generic report (seen in the code) containing fake process trees and AI scores, just so the Frontend has JSON data to render.</p>
+    </div>
+
+    <!-- Section 5: Unit Tests -->
+    <div class="card">
+        <h2>5. Unit & API Tests</h2>
+        <p>We don't just hope the code works; we prove it. use <strong>Pytest</strong> for testing.</p>
+
+        <h3>Key Test Files</h3>
+        <ul>
+            <li><code>tests/conftest.py</code>: The "Setup" file. It creates a temporary connection to the DB and an "Event Loop" for async tests.</li>
+            <li><code>tests/test_api/test_auth.py</code>: Tests if Registration and Login work.</li>
+            <li><code>tests/test_services/test_storage.py</code>: Tests MinIO upload BUT uses a <strong>Mock</strong>. It doesn't actually upload to MinIO; it just verifies that our Python code <em>tried</em> to call the upload function.</li>
+        </ul>
+
+        <h3>How to Run Tests</h3>
+        <pre><code># Run all tests
+pytest
+
+# Run with output (print statements)
+pytest -s
+
+# Run a specific file
+pytest tests/test_api/test_auth.py</code></pre>
+    </div>
+
+    <!-- Section 6: Troubleshooting -->
+    <div class="card">
+        <h2>6. Troubleshooting & FAQ</h2>
+        
+        <h3>Database connection failed?</h3>
+        <p>Check if Docker is running: <code>docker ps</code>. If `sandbox_db` is not listed, run `docker-compose up -d` again.</p>
+
+        <h3>"Method not allowed" 405 error?</h3>
+        <p>Check your URL. A common mistake is missing the trailing slash or using HTTP instead of HTTPS, though locally it should be HTTP.</p>
+
+        <h3>Tests failing with "RuntimeError: Event loop is closed"?</h3>
+        <p>This is a common AsyncIO issue. Ensure you installed `pytest-asyncio` and that `conftest.py` properly defines the `event_loop` fixture (which we did!).</p>
+    </div>
+
+</div>
+
+<footer>
+    <p>Generated by Antigravity for the Cybersecurity Sandbox Project.</p>
+</footer>
+
+</body>
+</html>

@@ -1,2 +1,0 @@
-# Sandbox
-Cyber Sandbox Environment

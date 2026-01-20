@@ -1,0 +1,40 @@
+# Backend Dependencies
+# ====================
+
+# Web Framework & API
+# -------------------
+fastapi==0.109.0        # High-performance Async Web Framework
+uvicorn[standard]==0.27.0 # ASGI Server for running FastAPI
+python-multipart==0.0.6 # For handling file uploads (multipart/form-data)
+
+# Database & ORM
+# --------------
+sqlalchemy==2.0.25      # ORM (Object Relational Mapper)
+asyncpg==0.29.0         # Async PostgreSQL driver for SQLAlchemy
+alembic==1.13.1         # Database Migrations tool
+
+# Storage & Queue
+# ---------------
+minio==7.2.3            # MinIO (S3) Python Client
+redis==5.0.1            # Redis Python Client
+celery==5.3.6           # Distributed Task Queue
+
+# Security & Auth
+# ---------------
+passlib[bcrypt]==1.7.4  # Password hashing (bcrypt)
+python-jose[cryptography]==3.3.0 # JWT Token generation/validation
+
+# Utilities
+# ---------
+pydantic==2.5.3         # Data validation and settings management
+pydantic-settings==2.1.0 # Environment variable management
+email-validator==2.1.0.post1 # Support for EmailStr
+requests==2.31.0        # Synchronous HTTP client (for specific blocking tasks or checks)
+httpx==0.26.0           # Async HTTP client (for calling usage in async functions)
+
+# Testing
+# -------
+pytest==7.4.4           # Testing framework
+pytest-asyncio==0.23.3  # Async support for Pytest
+aiosqlite==0.19.0       # Async SQLite driver for testing
+greenlet==3.0.3         # Task switching context (Required by SQLAlchemy Async)

@@ -1,0 +1,84 @@
+version: '3.8'
+
+# CyberSecurity Sandbox - Infrastructure Configuration
+# ====================================================
+# This docker-compose file defines the core infrastructure services required for the backend.
+# It sets up the Database (PostgreSQL), Message Broker (Redis), and Object Storage (MinIO).
+#
+# Services:
+# 1. db: PostgreSQL 15 for structured data (Users, Submissions, Reports).
+# 2. redis: Redis 7 for task queue management (Celery) and real-time status caching.
+# 3. minio: S3-compatible object storage for secure malware binary retention.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Database Service (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: sandbox_db
+    restart: always
+    environment:
+      # These credentials should ideally be loaded from a .env file for security.
+      # For the Dev/Mock environment, we use default values.
+      POSTGRES_USER: sandbox_user
+      POSTGRES_PASSWORD: sandbox_password
+      POSTGRES_DB: sandbox_db
+    ports:
+      # Expose standard Postgres port to localhost for inspection tools (e.g., pgAdmin, DBeaver)
+      - "5432:5432"
+    volumes:
+      # Persist database data to a local volume so it survives container restarts
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # Ensure the DB is ready before other services try to connect
+      test: ["CMD-SHELL", "pg_isready -U sandbox_user -d sandbox_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Message Broker (Redis)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: sandbox_redis
+    restart: always
+    ports:
+      # Expose Redis for debugging queue state
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # ---------------------------------------------------------------------------
+  # Object Storage (MinIO)
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: sandbox_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      # S3-compatible credentials
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_password
+    ports:
+      # 9000: API port (S3 protocol)
+      - "9000:9000"
+      # 9001: Web Console UI
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+       interval: 30s
+       timeout: 20s
+       retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
