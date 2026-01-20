@@ -43,3 +43,9 @@ debug_auth*.txt
 # IDE
 .vscode/
 .idea/
+
+# Local Development & UAT Scripts
+uat_*.py
+verify_*.py
+start_dev.ps1
+*.log
