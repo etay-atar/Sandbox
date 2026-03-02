@@ -29,12 +29,13 @@ async def test_submit_file(client: AsyncClient, db):
         mock_upload.return_value = "hash.bin"
         
         # 3. Upload File
-        files = {"file": ("eicar.txt", b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*", "text/plain")}
+        random_content = uuid.uuid4().hex.encode('utf-8')
+        files = {"file": ("test_file.txt", random_content, "text/plain")}
         response = await client.post("/api/v1/submissions/", files=files, headers=headers)
         
         assert response.status_code == 200
         data = response.json()
-        assert data["filename"] == "eicar.txt"
+        assert data["filename"] == "test_file.txt"
         assert data["status"] == "Queued"
 
 @pytest.mark.asyncio

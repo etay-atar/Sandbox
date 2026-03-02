@@ -92,60 +92,57 @@ async def submit_file(
     await db.commit()
     await db.refresh(submission)
     
-    # 5. Trigger Analysis (Hybrid Strategy)
-    # In a real async system, this would be a Celery task.
-    # Here we await it directly for simplicity, or background task.
-    
-    analyzer = real_analyzer if ANALYSIS_MODE == "REAL" else mock_analyzer
-    
-    # Run Analysis
-    try:
-        # We need the temp file path or download from MinIO. 
-        # For efficiency in this monolithic demo, we can save temp file.
-        import os
-        import tempfile
-        
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(contents)
-            tmp_path = tmp.name
-            
-        analysis_data = await analyzer.analyze(tmp_path, file.filename)
-        
-        # Cleanup (Best Effort)
+    # 5. Trigger Analysis
+    if ANALYSIS_MODE == "REAL":
+        from app.worker import analyze_file_task
+        # Dispatch to Celery queue
+        analyze_file_task.delay(str(submission.submission_id), sha256_hash, file.filename)
+        return submission
+    else:
+        analyzer = mock_analyzer
+        # Run Mock Analysis inline
         try:
-            os.unlink(tmp_path)
-        except Exception as cleanup_error:
-            # On Windows, this is common if scanners lock the file. 
-            # We log it but do NOT fail the submission.
-            print(f"Warning: Could not delete temp file {tmp_path}: {cleanup_error}")
-        
-        # Save Results
-        result_entry = AnalysisResult(
-            submission_id=submission.submission_id,
-            analyzer_engine=analysis_data["engine"],
-            static_analysis=analysis_data.get("static_analysis"),
-            yara_matches=analysis_data.get("yara_matches"),
-            ai_analysis=analysis_data.get("ai_analysis")
-        )
-        db.add(result_entry)
-        
-        # Update Submission
-        submission.status = SubmissionStatus.COMPLETED
-        submission.final_verdict = analysis_data.get("verdict", Verdict.PENDING)
-        
-        await db.commit()
-        
-    except Exception as e:
-        import traceback
-        # Use absolute path for debug log
-        error_log_path = r"C:\Users\itaya\.gemini\antigravity\scratch\Sandbox\backend\debug_error.txt"
-        with open(error_log_path, "w") as f:
-            f.write(traceback.format_exc())
-            f.write(str(e))
-        print(f"Analysis Failed: {e}")
-        submission.status = SubmissionStatus.FAILED
-        submission.final_verdict = f"ERROR: {str(e)}"
-        await db.commit()
+            import os
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp.write(contents)
+                tmp_path = tmp.name
+                
+            analysis_data = await analyzer.analyze(tmp_path, file.filename)
+            
+            # Cleanup (Best Effort)
+            try:
+                os.unlink(tmp_path)
+            except Exception as cleanup_error:
+                print(f"Warning: Could not delete temp file {tmp_path}: {cleanup_error}")
+            
+            # Save Results
+            result_entry = AnalysisResult(
+                submission_id=submission.submission_id,
+                analyzer_engine=analysis_data["engine"],
+                static_analysis=analysis_data.get("static_analysis"),
+                yara_matches=analysis_data.get("yara_matches"),
+                ai_analysis=analysis_data.get("ai_analysis")
+            )
+            db.add(result_entry)
+            
+            # Update Submission
+            submission.status = SubmissionStatus.COMPLETED
+            submission.final_verdict = analysis_data.get("verdict", Verdict.PENDING)
+            
+            await db.commit()
+            
+        except Exception as e:
+            import traceback
+            error_log_path = r"C:\Users\itaya\.gemini\antigravity\scratch\Sandbox\backend\debug_error.txt"
+            with open(error_log_path, "w") as f:
+                f.write(traceback.format_exc())
+                f.write(str(e))
+            print(f"Analysis Failed: {e}")
+            submission.status = SubmissionStatus.FAILED
+            submission.final_verdict = f"ERROR: {str(e)}"
+            await db.commit()
 
     return submission
 

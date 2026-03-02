@@ -80,5 +80,27 @@ class StorageService:
             filename,
         )
 
+    def download_file(self, filename: str) -> bytes:
+        """
+        Downloads a file from the storage bucket.
+        
+        Args:
+            filename: The object name.
+            
+        Returns:
+            bytes: The file contents.
+        """
+        try:
+            response = self.client.get_object(self.bucket, filename)
+            return response.read()
+        except S3Error as e:
+            print(f"Error downloading {filename} from minio: {e}")
+            return None
+        finally:
+            if 'response' in locals() and hasattr(response, 'close'):
+                response.close()
+                try: response.release_conn() 
+                except: pass
+
 # Singleton instance
 storage_service = StorageService()

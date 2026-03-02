@@ -121,25 +121,16 @@ class StaticAnalyzer(AnalysisEngine):
         """Scans file with basic YARA rules."""
         if yara is None:
             return ["YARA module not available. Scan skipped."]
-        # TODO: Load real rules from external file. For now, we compile a simple inline rule.
-        rules = yara.compile(source="""
-            rule SuspiciousStrings {
-                strings:
-                    $s1 = "cmd.exe" nocase
-                    $s2 = "powershell" nocase
-                    $s3 = "http://"
-                condition:
-                    any of them
-            }
-            rule IsPE {
-                strings:
-                    $mz = "MZ"
-                condition:
-                    $mz at 0
-            }
-        """)
-        matches = rules.match(file_path)
-        return [str(m) for m in matches]
+        # Load rules from external directory
+        current_dir = os.path.dirname(__file__)
+        rules_path = os.path.join(current_dir, "rules", "basic.yar")
+        
+        try:
+            rules = yara.compile(filepath=rules_path)
+            matches = rules.match(file_path)
+            return [str(m) for m in matches]
+        except Exception as e:
+            return [f"YARA scan error: {str(e)}"]
 
     async def analyze(self, file_path: str, file_name: str) -> Dict[str, Any]:
         results = {}
