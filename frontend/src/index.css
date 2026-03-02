@@ -1,3 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-gray-950 text-gray-100 font-sans tracking-tight antialiased selection:bg-primary-500 selection:text-white;
+    }
+}
+
+@layer components {
+
+    /* Glassmorphism utility */
+    .glass {
+        @apply bg-gray-900/40 backdrop-blur-md border border-gray-700/50 shadow-xl;
+    }
+
+    /* Input styling */
+    .input-premium {
+        @apply w-full p-3 bg-gray-950/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-300 text-gray-100 placeholder-gray-500 shadow-inner;
+    }
+
+    /* Button styling */
+    .btn-primary {
+        @apply w-full p-3 bg-gradient-to-r from-primary-600 to-primary-400 hover:from-primary-500 hover:to-primary-300 text-white font-bold rounded-lg shadow-lg hover:shadow-primary-500/50 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-none;
+    }
+
+    .btn-danger {
+        @apply px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white border border-red-600/50 hover:border-red-600 rounded-lg transition-all duration-300;
+    }
+}
+
+/* Custom Scrollbar for a premium feel */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-full hover:bg-gray-600 transition-colors;
+}

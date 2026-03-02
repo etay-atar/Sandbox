@@ -5,7 +5,7 @@ Defines the SQLAlchemy ORM models for the application.
 """
 import uuid
 import enum
-from sqlalchemy import Column, String, Boolean, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, Enum, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
@@ -58,3 +58,23 @@ class Submission(Base):
     
     # Relationships
     owner = relationship("User", back_populates="submissions")
+    analysis_result = relationship("AnalysisResult", back_populates="submission", uselist=False, cascade="all, delete-orphan")
+
+class AnalysisResult(Base):
+    __tablename__ = "analysis_results"
+
+    result_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    submission_id = Column(UUID(as_uuid=True), ForeignKey("submissions.submission_id", ondelete="CASCADE"), unique=True, nullable=False)
+    
+    # Analysis Configuration
+    analyzer_engine = Column(String, default="MOCK") # MOCK or REAL
+    
+    # Structured Data
+    static_analysis = Column(JSON, nullable=True) # PE Headers, Hashes, Strings
+    yara_matches = Column(JSON, nullable=True)    # List of rule hits
+    ai_analysis = Column(JSON, nullable=True)     # Phase 3
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    submission = relationship("Submission", back_populates="analysis_result")
