@@ -92,8 +92,18 @@ Project Root
     ```bash
     uvicorn app.main:app --reload
     ```
+6.  **Quick Dev Scripts (Windows Power Users)**
+    Instead of manually starting containers, backend, and frontend each time, you can use the bundled powershell scripts from the project root!
+    ```powershell
+    # To start all containers, Uvicorn, Celery, and Vite in the background:
+    .\start_dev.ps1
+    
+    # To gracefully kill all processes and stop the containers:
+    .\stop_dev.ps1
+    ```
     The API will be available at `http://localhost:8000`.
     Interactive Docs: `http://localhost:8000/docs`.
+    Frontend Dashboard: `http://localhost:5173`.
 
 ---
 
