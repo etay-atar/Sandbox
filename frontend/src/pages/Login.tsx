@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
     const [isRegistering, setIsRegistering] = useState(false);
-    const [username, setUsername] = useState('Analyst'); // Default for ease
-    const [password, setPassword] = useState('password123'); // Default for ease
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
     const [email, setEmail] = useState(''); // Only during registration
     
     const { login } = useAuth();
@@ -23,7 +23,7 @@ export default function Login() {
             if (isRegistering) {
                 // EXPLICIT REGISTRATION
                 try {
-                    await api.post('/auth/register', { username, password, email, role: 'User' });
+                    await api.post('/auth/register', { username, password, email, role: 'Analyst' });
                     setSuccessMsg('Registration successful! Logging in...');
                 } catch (registerError: any) {
                     setError(registerError.response?.data?.detail || 'Registration failed due to strict password requirements.');
