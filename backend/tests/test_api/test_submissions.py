@@ -19,8 +19,8 @@ async def test_submit_file(client: AsyncClient, db):
     random_str = uuid.uuid4().hex
     username = f"sub_{random_str}"
     
-    await client.post("/api/v1/auth/register", json={"username": username, "password": "pw"})
-    login_res = await client.post("/api/v1/auth/login", data={"username": username, "password": "pw"})
+    await client.post("/api/v1/auth/register", json={"username": username, "password": "StrongPass1!"})
+    login_res = await client.post("/api/v1/auth/login", data={"username": username, "password": "StrongPass1!"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
     

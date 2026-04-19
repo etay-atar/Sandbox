@@ -20,7 +20,7 @@ async def test_register_user(client: AsyncClient, db):
         "/api/v1/auth/register",
         json={
             "username": username,
-            "password": "newpassword123",
+            "password": "StrongPass1!",
             "email": email,
             "role": "Analyst"
         }
@@ -44,7 +44,7 @@ async def test_login_user(client: AsyncClient, db):
         "/api/v1/auth/register",
         json={
             "username": username,
-            "password": "password123"
+            "password": "StrongPass1!"
         }
     )
     
@@ -53,7 +53,7 @@ async def test_login_user(client: AsyncClient, db):
         "/api/v1/auth/login",
         data={
             "username": username,
-            "password": "password123"
+            "password": "StrongPass1!"
         }
     )
     assert response.status_code == 200

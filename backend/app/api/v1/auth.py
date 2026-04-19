@@ -4,6 +4,7 @@ Auth API Routes
 Endpoints for User Registration and Authentication.
 """
 from typing import Any
+import re
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -61,7 +62,23 @@ async def register_user(
             detail="The user with this username already exists in the system.",
         )
         
-    # 2. Create User
+    # 2. Enforce Strict Password Complexity
+    try:
+        pwd = user_in.password
+        if len(pwd) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"[A-Z]", pwd):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", pwd):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"[0-9]", pwd):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r"[\W_]", pwd):
+            raise ValueError("Password must contain at least one special character")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+        
+    # 3. Create User
     user = User(
         username=user_in.username,
         email=user_in.email,
