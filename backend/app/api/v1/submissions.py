@@ -123,7 +123,8 @@ async def submit_file(
                 analyzer_engine=analysis_data["engine"],
                 static_analysis=analysis_data.get("static_analysis"),
                 yara_matches=analysis_data.get("yara_matches"),
-                ai_analysis=analysis_data.get("ai_analysis")
+                ai_analysis=analysis_data.get("ai_analysis"),
+                dynamic_analysis=analysis_data.get("dynamic_analysis")
             )
             db.add(result_entry)
             
@@ -217,7 +218,8 @@ async def get_submission_report(
             "engine": analysis_result.analyzer_engine,
             "static_analysis": analysis_result.static_analysis,
             "yara_matches": analysis_result.yara_matches,
-            "ai_analysis": analysis_result.ai_analysis
+            "ai_analysis": analysis_result.ai_analysis,
+            "dynamic_analysis": analysis_result.dynamic_analysis
         }
 
     # Fallback to MOCK REPORT DATA (Legacy)
