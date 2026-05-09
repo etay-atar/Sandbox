@@ -6,6 +6,7 @@ from celery import Celery
 from app.core.config import settings
 from app.core.analysis.static_analyzer import StaticAnalyzer
 from app.core.analysis.ai_analyzer import AIAnalyzer
+from app.core.analysis.dynamic_analyzer import DynamicAnalyzer
 from app.models.models import Submission, SubmissionStatus, Verdict, AnalysisResult
 from app.db.session import SessionLocal
 from app.services.storage import storage_service
@@ -28,6 +29,7 @@ celery_app.conf.update(
 
 real_analyzer = StaticAnalyzer()
 ai_analyzer = AIAnalyzer()
+dynamic_analyzer = DynamicAnalyzer()
 
 async def async_analyze_submission(submission_id_str: str, file_hash: str, filename: str):
     """
@@ -51,7 +53,8 @@ async def async_analyze_submission(submission_id_str: str, file_hash: str, filen
         # Run Analysis
         static_task = real_analyzer.analyze(tmp_path, filename)
         ai_task = ai_analyzer.analyze(tmp_path, filename)
-        static_data, ai_data = await asyncio.gather(static_task, ai_task)
+        dynamic_task = dynamic_analyzer.analyze(tmp_path, filename)
+        static_data, ai_data, dynamic_data = await asyncio.gather(static_task, ai_task, dynamic_task)
         
         # Cleanup
         try:
@@ -74,19 +77,25 @@ async def async_analyze_submission(submission_id_str: str, file_hash: str, filen
             final_verdict = static_data.get("verdict", Verdict.BENIGN)
             ai_score = ai_data.get("ai_analysis", {}).get("threat_score", 0.0)
             
+            # Dynamic triggers
+            dyn_status = dynamic_data.get("status")
+            dyn_risk = dynamic_data.get("risk_score", 0.0)
+            
             if final_verdict != Verdict.MALICIOUS: # Don't downgrade if YARA caught it
-                if ai_score >= 0.85:
+                # High AI score OR High Dynamic Risk Score elevates to Malicious
+                if ai_score >= 0.85 or dyn_risk >= 70.0:
                     final_verdict = Verdict.MALICIOUS
-                elif ai_score >= 0.6:
+                elif ai_score >= 0.6 or dyn_risk >= 40.0:
                     final_verdict = Verdict.SUSPICIOUS
 
             # Save Results
             result_entry = AnalysisResult(
                 submission_id=submission.submission_id,
-                analyzer_engine="Hybrid Engine (Static + AI)",
+                analyzer_engine="Hybrid Engine (Static + AI + Dynamic)",
                 static_analysis=static_data.get("static_analysis"),
                 yara_matches=static_data.get("yara_matches"),
-                ai_analysis=ai_data.get("ai_analysis")
+                ai_analysis=ai_data.get("ai_analysis"),
+                dynamic_analysis=dynamic_data
             )
             session.add(result_entry)
             

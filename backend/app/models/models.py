@@ -72,7 +72,8 @@ class AnalysisResult(Base):
     # Structured Data
     static_analysis = Column(JSON, nullable=True) # PE Headers, Hashes, Strings
     yara_matches = Column(JSON, nullable=True)    # List of rule hits
-    ai_analysis = Column(JSON, nullable=True)     # Phase 3
+    ai_analysis = Column(JSON, nullable=True)     # Threat Score, Entropy
+    dynamic_analysis = Column(JSON, nullable=True) # Phase 3: Sandbox execution behavioral logs
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
