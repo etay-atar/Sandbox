@@ -5,6 +5,7 @@ import traceback
 from celery import Celery
 from app.core.config import settings
 from app.core.analysis.static_analyzer import StaticAnalyzer
+from app.core.analysis.ai_analyzer import AIAnalyzer
 from app.models.models import Submission, SubmissionStatus, Verdict, AnalysisResult
 from app.db.session import SessionLocal
 from app.services.storage import storage_service
@@ -26,6 +27,7 @@ celery_app.conf.update(
 )
 
 real_analyzer = StaticAnalyzer()
+ai_analyzer = AIAnalyzer()
 
 async def async_analyze_submission(submission_id_str: str, file_hash: str, filename: str):
     """
@@ -47,7 +49,9 @@ async def async_analyze_submission(submission_id_str: str, file_hash: str, filen
             tmp_path = tmp.name
             
         # Run Analysis
-        analysis_data = await real_analyzer.analyze(tmp_path, filename)
+        static_task = real_analyzer.analyze(tmp_path, filename)
+        ai_task = ai_analyzer.analyze(tmp_path, filename)
+        static_data, ai_data = await asyncio.gather(static_task, ai_task)
         
         # Cleanup
         try:
@@ -66,19 +70,29 @@ async def async_analyze_submission(submission_id_str: str, file_hash: str, filen
                 print(f"Submission {sub_id} not found in DB.")
                 return
 
+            # Combine final verdict logic
+            final_verdict = static_data.get("verdict", Verdict.BENIGN)
+            ai_score = ai_data.get("ai_analysis", {}).get("threat_score", 0.0)
+            
+            if final_verdict != Verdict.MALICIOUS: # Don't downgrade if YARA caught it
+                if ai_score >= 0.85:
+                    final_verdict = Verdict.MALICIOUS
+                elif ai_score >= 0.6:
+                    final_verdict = Verdict.SUSPICIOUS
+
             # Save Results
             result_entry = AnalysisResult(
                 submission_id=submission.submission_id,
-                analyzer_engine=analysis_data.get("engine", "StaticAnalyzer"),
-                static_analysis=analysis_data.get("static_analysis"),
-                yara_matches=analysis_data.get("yara_matches"),
-                ai_analysis=analysis_data.get("ai_analysis")
+                analyzer_engine="Hybrid Engine (Static + AI)",
+                static_analysis=static_data.get("static_analysis"),
+                yara_matches=static_data.get("yara_matches"),
+                ai_analysis=ai_data.get("ai_analysis")
             )
             session.add(result_entry)
             
             # Update Submission
             submission.status = SubmissionStatus.COMPLETED
-            submission.final_verdict = analysis_data.get("verdict", Verdict.PENDING)
+            submission.final_verdict = final_verdict
             
             await session.commit()
             return f"Analysis complete for {sub_id}"

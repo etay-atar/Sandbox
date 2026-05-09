@@ -43,7 +43,7 @@ class SubmissionResponse(BaseModel):
     submission_id: UUID4
     filename: str
     status: SubmissionStatus
-    final_verdict: Verdict
+    final_verdict: str
     created_at: datetime
     # We might add file_hash_sha256 if needed
 

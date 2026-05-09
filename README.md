@@ -127,9 +127,9 @@ python -m pytest -v
     - [x] Authentication & Security
     - [x] API & Mock Analysis Logic
 
-- [ ] **Phase 2: Core Analysis (In Progress)**
-    - [ ] Real Static Analysis (PE, YARA)
-    - [ ] AI Service Integration
+- [x] **Phase 2: Core Analysis (In Progress)**
+    - [x] Real Static Analysis (PE, YARA)
+    - [x] AI Service Integration
 
 - [ ] **Phase 3: Dynamic Sandboxing**
     - [ ] KVM/Libvirt Orchestration
