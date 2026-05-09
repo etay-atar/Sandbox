@@ -19,6 +19,8 @@ export default function VisualReport({ report }: Props) {
     // Safely extract nested data
     const staticData = report.static_analysis || {};
     const aiData = report.ai_analysis || {};
+    const dynamicData = report.dynamic_analysis || {};
+    
     const threatScore = aiData.threat_score || 0;
     const entropy = aiData.features?.shannon_entropy || 0;
     
@@ -158,6 +160,92 @@ export default function VisualReport({ report }: Props) {
                                 </div>
                             );
                         })}
+                    </div>
+                </div>
+            )}
+
+            {/* Behavioral Activity (Dynamic Sandbox) */}
+            {dynamicData.status && (
+                <div className="glass rounded-2xl p-5 border border-gray-800 mt-2 flex flex-col gap-5 relative overflow-hidden">
+                    {/* Simulated Badge */}
+                    {dynamicData.hypervisor?.includes('Simulated') && (
+                        <div className="absolute top-4 right-4 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase flex items-center gap-2">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            Simulated Execution
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+                        <div className="p-2 bg-purple-900/20 rounded-lg text-purple-400 border border-purple-500/30">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold tracking-widest text-gray-200 uppercase">Behavioral Activity</h3>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Runtime execution captured via {dynamicData.hypervisor || 'Sandbox'}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        {/* Process Tree */}
+                        <div className="bg-[#06090e] border border-gray-800 rounded-xl p-4 shadow-inner flex flex-col">
+                            <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                                <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                                Process Tree
+                            </h4>
+                            <div className="font-mono text-xs text-gray-300 leading-relaxed overflow-x-auto whitespace-pre">
+                                {(dynamicData.process_tree || []).length > 0 ? (
+                                    (dynamicData.process_tree || []).map((proc: string, i: number) => (
+                                        <div key={i} className="text-primary-300">{proc}</div>
+                                    ))
+                                ) : (
+                                    <span className="text-gray-600 italic">No child processes spawned.</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-5">
+                            {/* Network Activity */}
+                            <div className="bg-[#06090e] border border-gray-800 rounded-xl p-4 shadow-inner">
+                                <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                                    <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                                    Network Calls
+                                </h4>
+                                <div className="space-y-1.5">
+                                    {(dynamicData.network_activity || []).length > 0 ? (
+                                        (dynamicData.network_activity || []).map((net: string, i: number) => (
+                                            <div key={i} className="font-mono text-[10px] bg-gray-900/50 border border-gray-800/80 px-2 py-1 rounded text-emerald-400/80 truncate" title={net}>{net}</div>
+                                        ))
+                                    ) : (
+                                        <span className="text-xs font-mono text-gray-600 italic">No network traffic detected.</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* File System */}
+                            <div className="bg-[#06090e] border border-gray-800 rounded-xl p-4 shadow-inner">
+                                <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                                    <svg className="w-3 h-3 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                    File Drops & Modifications
+                                </h4>
+                                <div className="space-y-1.5">
+                                    {(dynamicData.file_system_changes || []).length > 0 ? (
+                                        (dynamicData.file_system_changes || []).map((file: string, i: number) => {
+                                            const isCreate = file.toLowerCase().includes('create');
+                                            return (
+                                                <div key={i} className="font-mono text-[10px] bg-gray-900/50 border border-gray-800/80 px-2 py-1.5 rounded flex items-start gap-2">
+                                                    <span className={clsx("px-1.5 py-0.5 rounded text-[9px] uppercase font-bold", isCreate ? "bg-yellow-900/30 text-yellow-500 border border-yellow-500/20" : "bg-blue-900/30 text-blue-400 border border-blue-500/20")}>
+                                                        {isCreate ? 'Drop' : 'Mod'}
+                                                    </span>
+                                                    <span className="text-gray-400 truncate mt-0.5" title={file}>{file.replace(/^(Created:|Modified:)\s*/i, '')}</span>
+                                                </div>
+                                            )
+                                        })
+                                    ) : (
+                                        <span className="text-xs font-mono text-gray-600 italic">No persistent file system changes.</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
