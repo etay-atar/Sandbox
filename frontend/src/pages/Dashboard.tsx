@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
+import ReportGlossaryModal from '../components/ReportGlossaryModal';
 
 interface Submission {
     submission_id: string;
@@ -18,6 +19,7 @@ export default function Dashboard() {
     const [uploading, setUploading] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [report, setReport] = useState<any>(null);
+    const [showGlossary, setShowGlossary] = useState(false);
 
     const fetchSubmissions = async () => {
         try {
@@ -224,7 +226,16 @@ export default function Dashboard() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             Intelligence Report
                         </h2>
-                        {selectedId && <span className="text-[10px] font-mono font-bold tracking-widest text-primary-400 bg-primary-900/20 px-2 py-1 rounded border border-primary-500/30">ID: {selectedId.split('-')[0]}</span>}
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => setShowGlossary(true)}
+                                className="text-xs font-semibold tracking-wide text-primary-400 bg-primary-900/10 hover:bg-primary-900/30 border border-primary-500/20 hover:border-primary-500/50 px-3 py-1.5 rounded transition-all flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Glossary
+                            </button>
+                            {selectedId && <span className="text-[10px] font-mono font-bold tracking-widest text-primary-400 bg-primary-900/20 px-2 py-1 rounded border border-primary-500/30">ID: {selectedId.split('-')[0]}</span>}
+                        </div>
                     </div>
 
                     <div className="flex-1 p-6 overflow-y-auto bg-[#0a0f16]">
@@ -314,6 +325,7 @@ export default function Dashboard() {
                 </div>
 
             </main>
+            <ReportGlossaryModal isOpen={showGlossary} onClose={() => setShowGlossary(false)} />
         </div>
     );
 }
