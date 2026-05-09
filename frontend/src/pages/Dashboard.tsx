@@ -326,8 +326,9 @@ export default function Dashboard() {
                                                     </code>
                                                 </pre>
                                             </div>
-                                        </>
-                                    )}
+                                        </div>
+                                    </>
+                                )}
                                     </div>
                                 ) : (
                                     <div className="h-full flex flex-col items-center justify-center text-gray-600 relative z-10">
