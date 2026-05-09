@@ -3,6 +3,7 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
 import ReportGlossaryModal from '../components/ReportGlossaryModal';
+import VisualReport from '../components/VisualReport';
 
 interface Submission {
     submission_id: string;
@@ -20,6 +21,7 @@ export default function Dashboard() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [report, setReport] = useState<any>(null);
     const [showGlossary, setShowGlossary] = useState(false);
+    const [viewMode, setViewMode] = useState<'visual' | 'json'>('visual');
 
     const fetchSubmissions = async () => {
         try {
@@ -227,6 +229,27 @@ export default function Dashboard() {
                             Intelligence Report
                         </h2>
                         <div className="flex items-center gap-4">
+                            
+                            {/* View Mode Toggle */}
+                            {report && (
+                                <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-1">
+                                    <button
+                                        onClick={() => setViewMode('visual')}
+                                        className={clsx("text-xs font-semibold px-3 py-1.5 rounded-md transition-all flex items-center gap-2", viewMode === 'visual' ? "bg-primary-500/20 text-primary-400" : "text-gray-500 hover:text-gray-300")}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                                        Visual
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('json')}
+                                        className={clsx("text-xs font-semibold px-3 py-1.5 rounded-md transition-all flex items-center gap-2", viewMode === 'json' ? "bg-primary-500/20 text-primary-400" : "text-gray-500 hover:text-gray-300")}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                                        JSON
+                                    </button>
+                                </div>
+                            )}
+
                             <button 
                                 onClick={() => setShowGlossary(true)}
                                 className="text-xs font-semibold tracking-wide text-primary-400 bg-primary-900/10 hover:bg-primary-900/30 border border-primary-500/20 hover:border-primary-500/50 px-3 py-1.5 rounded transition-all flex items-center gap-2"
@@ -243,7 +266,12 @@ export default function Dashboard() {
                             <div className="h-full">
                                 {report ? (
                                     <div className="animate-fade-in h-full flex flex-col gap-4">
-                                        <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 flex divide-x divide-gray-700/50 shadow-inner">
+                                        
+                                        {viewMode === 'visual' ? (
+                                            <VisualReport report={report} />
+                                        ) : (
+                                            <>
+                                                <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 flex divide-x divide-gray-700/50 shadow-inner">
                                             <div className="px-4 flex-1">
                                                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Status</p>
                                                 <p className="font-mono text-sm text-gray-300 bg-gray-800 inline-block px-2 py-1 rounded">{report.status || 'Completed'}</p>
@@ -298,7 +326,8 @@ export default function Dashboard() {
                                                     </code>
                                                 </pre>
                                             </div>
-                                        </div>
+                                        </>
+                                    )}
                                     </div>
                                 ) : (
                                     <div className="h-full flex flex-col items-center justify-center text-gray-600 relative z-10">
