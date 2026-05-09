@@ -19,7 +19,7 @@ Once Windows is installed and you are on the desktop:
 3. Reboot the VM.
 > **Why?** The Python backend uses the `VBoxManage guestcontrol` command to push the malware file from your host machine into the VM. This command **only works** if VirtualBox Guest Additions is installed and running inside the VM.
 
-## Step 3: Network Configuration
+## Step 3: Isolation & Network Configuration
 > **Question: Do I turn off the network altogether?**
 > **Answer: NO.** If you disconnect the internet, 90% of modern malware will immediately shut down because it cannot reach its Command & Control (C2) server or download its secondary payload.
 
@@ -27,7 +27,11 @@ Once Windows is installed and you are on the desktop:
 2. Go to the VM **Settings -> Network**.
 3. Set Attached to: **NAT Network** or **Host-only Adapter**.
    - **NAT** allows the malware to reach the internet, but prevents it from scanning or infecting devices on your home WiFi/LAN.
-4. Start the VM again.
+4. Go to **Settings -> General -> Advanced**.
+   - Ensure **Shared Clipboard** and **Drag'n'Drop** are both set to **Disabled**.
+5. Go to **Settings -> Shared Folders**.
+   - Ensure this list is **completely empty**. Malware can easily spread to your host machine if a host folder is mounted as a network drive inside the VM!
+6. Start the VM again.
 
 ## Step 4: Disabling Security Controls
 You must make the VM as vulnerable as possible. Modern malware will detect security controls and terminate itself.
