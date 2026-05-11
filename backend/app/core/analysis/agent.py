@@ -10,12 +10,8 @@ def monitor_execution(payload_path: str, timeout: int = 10):
         "status": "success",
         "hypervisor": "VirtualBox (Real Telemetry)",
         "process_tree": [],
-        "network_activity": [
-            "Intercepted via Guest Agent (Simulation): DNS Query to evil-c2.net"
-        ],
-        "file_system_changes": [
-            f"Intercepted via Guest Agent (Simulation): Created {payload_path}.log"
-        ],
+        "network_activity": [],
+        "file_system_changes": [],
         "risk_score": 0.0
     }
 
@@ -41,6 +37,19 @@ def monitor_execution(payload_path: str, timeout: int = 10):
                             new_processes.append(proc_info)
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     pass
+                    
+            # Capture network connections
+            try:
+                for conn in psutil.net_connections(kind='inet'):
+                    if conn.status == 'ESTABLISHED' and conn.raddr:
+                        # Ensure we don't log the Python agent's own internal connections if any
+                        if conn.pid != os.getpid():
+                            net_info = f"TCP Outbound: {conn.raddr.ip}:{conn.raddr.port} (PID: {conn.pid})"
+                            if net_info not in results["network_activity"]:
+                                results["network_activity"].append(net_info)
+            except psutil.AccessDenied:
+                pass
+                
             time.sleep(1)
 
         # Terminate payload if still running

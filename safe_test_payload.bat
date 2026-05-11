@@ -1,4 +1,6 @@
 @echo off
+
+
 echo [*] Sandbox Test Payload Executing...
 
 :: 1. Safe Network Activity (DNS and HTTP)
@@ -15,3 +17,4 @@ echo [*] Test Complete.
 exit
 
 :: Added to bypass deduplication cache
+:: Added again to bypass the cache from the previous simulated run
