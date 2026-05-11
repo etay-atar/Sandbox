@@ -188,10 +188,11 @@ export default function VisualReport({ report }: Props) {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Process Tree */}
                         <div className="bg-[#06090e] border border-gray-800 rounded-xl p-4 shadow-inner flex flex-col">
-                            <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                            <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-2">
                                 <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
                                 Process Tree
                             </h4>
+                            <p className="text-[9px] text-gray-600 mb-3">Identifies if the malware attempts to spawn hidden child processes (like PowerShell or cmd.exe) to execute malicious commands.</p>
                             <div className="font-mono text-xs text-gray-300 leading-relaxed overflow-x-auto whitespace-pre">
                                 {(dynamicData.process_tree || []).length > 0 ? (
                                     (dynamicData.process_tree || []).map((proc: string, i: number) => (
@@ -206,10 +207,11 @@ export default function VisualReport({ report }: Props) {
                         <div className="flex flex-col gap-5">
                             {/* Network Activity */}
                             <div className="bg-[#06090e] border border-gray-800 rounded-xl p-4 shadow-inner">
-                                <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                                <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-2">
                                     <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
                                     Network Calls
                                 </h4>
+                                <p className="text-[9px] text-gray-600 mb-3">Intercepted outbound connections attempting to reach Command & Control (C2) servers or download secondary payloads.</p>
                                 <div className="space-y-1.5">
                                     {(dynamicData.network_activity || []).length > 0 ? (
                                         (dynamicData.network_activity || []).map((net: string, i: number) => (
@@ -223,10 +225,11 @@ export default function VisualReport({ report }: Props) {
 
                             {/* File System */}
                             <div className="bg-[#06090e] border border-gray-800 rounded-xl p-4 shadow-inner">
-                                <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                                <h4 className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-2">
                                     <svg className="w-3 h-3 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                                     File Drops & Modifications
                                 </h4>
+                                <p className="text-[9px] text-gray-600 mb-3">Detects if the malware attempts to drop hidden files (ransomware encryptors) or modify critical host system files.</p>
                                 <div className="space-y-1.5">
                                     {(dynamicData.file_system_changes || []).length > 0 ? (
                                         (dynamicData.file_system_changes || []).map((file: string, i: number) => {

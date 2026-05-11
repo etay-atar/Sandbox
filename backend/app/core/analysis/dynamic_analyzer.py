@@ -89,21 +89,45 @@ class DynamicAnalyzer(AnalysisEngine):
             logger.info("Booting VM...")
             await self._start_vm()
 
-            logger.info("Injecting payload via Guest Additions...")
-            # Example guestcontrol command (requires auth in real setup)
-            # await self._run_cmd("guestcontrol", self.vm_name, "copyto", f'"{file_path}"', r'"C:\Users\Admin\Desktop\"')
+            logger.info("Injecting payload and agent via Guest Additions...")
+            # We assume a passwordless generic User account for testing, or we rely on the user to configure VirtualBox Guest Properties.
+            # In a production environment, credentials would be loaded from config.
+            agent_path = os.path.join(os.path.dirname(__file__), "agent.py")
+            
+            # Copy Agent
+            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyto", f'"{agent_path}"', r'"C:\Users\Public\agent.py"', "--username", "User", "--password", "")
+            if code != 0:
+                logger.warning(f"Failed to inject agent: {err}. Falling back to simulation.")
+                return self._simulate_behavior(file_name)
+
+            # Copy Payload
+            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyto", f'"{file_path}"', f'"C:\\Users\\Public\\{file_name}"', "--username", "User", "--password", "")
+            if code != 0:
+                logger.warning(f"Failed to inject payload: {err}. Falling back to simulation.")
+                return self._simulate_behavior(file_name)
             
             logger.info("Executing payload and capturing logs...")
-            # A real agent would be running inside the VM streaming sysmon logs back over a socket.
-            # For Phase 3 setup, we wait a few seconds and grab a dummy network capture.
-            await asyncio.sleep(5)
+            code, out, err = await self._run_cmd(
+                "guestcontrol", self.vm_name, "run", "--exe", r'"C:\Windows\System32\cmd.exe"', 
+                "--username", "User", "--password", "", 
+                "--", "cmd.exe", "/c", f"python C:\\Users\\Public\\agent.py C:\\Users\\Public\\{file_name}"
+            )
+
+            logger.info("Retrieving telemetry...")
+            host_results_path = f"{file_path}_results.json"
+            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyfrom", r'"C:\Users\Public\results.json"', f'"{host_results_path}"', "--username", "User", "--password", "")
+            
+            if code == 0 and os.path.exists(host_results_path):
+                import json
+                with open(host_results_path, "r") as f:
+                    behavioral_data = json.load(f)
+                os.remove(host_results_path)
+            else:
+                logger.warning("Failed to retrieve telemetry. Falling back to simulation.")
+                return self._simulate_behavior(file_name)
 
             logger.info("Tearing down environment...")
             await self._poweroff_vm()
-
-            behavioral_data["status"] = "success"
-            behavioral_data["network_activity"].append("DNS Query: malicious-domain.com")
-            behavioral_data["process_tree"].append(f"{file_name} -> cmd.exe /c timeout 5")
             
         except Exception as e:
             logger.error(f"Dynamic Analysis orchestration failed: {e}")
