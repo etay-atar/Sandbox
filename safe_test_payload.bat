@@ -13,3 +13,5 @@ powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Powershell child pr
 
 echo [*] Test Complete.
 exit
+
+:: Added to bypass deduplication cache

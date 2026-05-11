@@ -21,6 +21,9 @@ class DynamicAnalyzer(AnalysisEngine):
             alt_path = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
             if os.path.exists(alt_path):
                 self.vbox_cmd = f'"{alt_path}"'
+                
+        self.guest_user = os.environ.get("VBOX_GUEST_USER", "vboxuser")
+        self.guest_pass = os.environ.get("VBOX_GUEST_PASS", "Pass1234")
 
     def _is_vbox_in_path(self) -> bool:
         # Quick check if VBoxManage is accessible natively
@@ -89,19 +92,30 @@ class DynamicAnalyzer(AnalysisEngine):
             logger.info("Booting VM...")
             await self._start_vm()
 
-            logger.info("Injecting payload and agent via Guest Additions...")
-            # We assume a passwordless generic User account for testing, or we rely on the user to configure VirtualBox Guest Properties.
-            # In a production environment, credentials would be loaded from config.
+            logger.info("Waiting for Guest Additions to initialize...")
             agent_path = os.path.join(os.path.dirname(__file__), "agent.py")
             
+            # Retry loop for Guest Additions
+            max_retries = 15
+            for attempt in range(max_retries):
+                logger.debug(f"Guest control connection attempt {attempt+1}/{max_retries}...")
+                code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "stat", r'"C:\Users\Public"', "--username", self.guest_user, "--password", self.guest_pass)
+                if code == 0:
+                    break
+                await asyncio.sleep(3)
+            else:
+                logger.warning("Guest Additions did not become ready in time. Falling back to simulation.")
+                return self._simulate_behavior(file_name)
+
+            logger.info("Injecting payload and agent via Guest Additions...")
             # Copy Agent
-            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyto", f'"{agent_path}"', r'"C:\Users\Public\agent.py"', "--username", "User", "--password", "")
+            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyto", "--username", self.guest_user, "--password", self.guest_pass, f'"{agent_path}"', r'"C:\Users\Public\agent.py"')
             if code != 0:
                 logger.warning(f"Failed to inject agent: {err}. Falling back to simulation.")
                 return self._simulate_behavior(file_name)
 
             # Copy Payload
-            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyto", f'"{file_path}"', f'"C:\\Users\\Public\\{file_name}"', "--username", "User", "--password", "")
+            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyto", "--username", self.guest_user, "--password", self.guest_pass, f'"{file_path}"', f'"C:\\Users\\Public\\{file_name}"')
             if code != 0:
                 logger.warning(f"Failed to inject payload: {err}. Falling back to simulation.")
                 return self._simulate_behavior(file_name)
@@ -109,13 +123,13 @@ class DynamicAnalyzer(AnalysisEngine):
             logger.info("Executing payload and capturing logs...")
             code, out, err = await self._run_cmd(
                 "guestcontrol", self.vm_name, "run", "--exe", r'"C:\Windows\System32\cmd.exe"', 
-                "--username", "User", "--password", "", 
+                "--username", self.guest_user, "--password", self.guest_pass, 
                 "--", "cmd.exe", "/c", f"python C:\\Users\\Public\\agent.py C:\\Users\\Public\\{file_name}"
             )
 
             logger.info("Retrieving telemetry...")
             host_results_path = f"{file_path}_results.json"
-            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyfrom", r'"C:\Users\Public\results.json"', f'"{host_results_path}"', "--username", "User", "--password", "")
+            code, out, err = await self._run_cmd("guestcontrol", self.vm_name, "copyfrom", "--username", self.guest_user, "--password", self.guest_pass, r'"C:\Users\Public\results.json"', f'"{host_results_path}"')
             
             if code == 0 and os.path.exists(host_results_path):
                 import json
