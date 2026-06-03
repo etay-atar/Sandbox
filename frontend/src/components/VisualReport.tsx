@@ -28,7 +28,7 @@ export default function VisualReport({ report }: Props) {
     const dynamicData = report.dynamic_analysis || {};
     
     const threatScore = aiData.threat_score || 0;
-    const entropy = aiData.features?.shannon_entropy || 0;
+    const entropy = staticData.shannon_entropy || 0;
     
     const yaraMatches: string[] = report.yara_matches || [];
     const anomalies: string[] = staticData.anomalies || [];

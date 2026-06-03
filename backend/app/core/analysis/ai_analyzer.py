@@ -84,17 +84,19 @@ class AIAnalyzer(AnalysisEngine):
 
             # --- Use Actual Model Output ---
             # For this sandbox phase, since we don't have the 100MB weights file,
-            # we use the raw score of the untrained model. It will output a float
-            # between 0 and 1. This prevents the system from automatically flagging
-            # everything as malicious.
+            # we use the raw score of the untrained model.
             threat_score = float(raw_score)
+            
+            # If weights are not loaded, the score is random noise. We clamp it near 0.5 (neutral)
+            if not self.weights_loaded:
+                 threat_score = 0.5 + (threat_score * 0.1 - 0.05) # Range 0.45 - 0.55
 
             return {
                 "engine": "AI Deep Learning (PyTorch)",
                 "ai_analysis": {
                     "model": "MalConv (Production Weights Loaded)" if self.weights_loaded else "MalConv (Untrained)",
                     "threat_score": threat_score,
-                    "confidence": 0.95,
+                    "confidence": 0.95 if self.weights_loaded else 0.10,
                     "features": {
                         "analyzed_bytes": min(len(bytez), self.max_len),
                         "file_size_bytes": len(bytez),

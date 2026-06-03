@@ -154,23 +154,69 @@ class DynamicAnalyzer(AnalysisEngine):
 
         return behavioral_data
 
-    def _simulate_behavior(self, file_name: str) -> Dict[str, Any]:
-        """Simulate dynamic behavior if hypervisor is unavailable."""
-        return {
+    def _simulate_behavior(self, file_name: str, file_path: str = None) -> Dict[str, Any]:
+        """Content-aware simulation when hypervisor is unavailable.
+        Reads the actual file and generates proportional behavioral data."""
+        
+        # Default clean behavioral data
+        data = {
             "hypervisor": "VirtualBox (Simulated)",
             "vm_name": self.vm_name,
             "status": "success",
-            "network_activity": [
-                "HTTP GET http://checkip.dyndns.org/",
-                "DNS Query: crl.microsoft.com"
-            ],
-            "file_system_changes": [
-                f"Created: C:\\Users\\Public\\{file_name}.bat",
-                "Modified: C:\\Windows\\System32\\drivers\\etc\\hosts"
-            ],
-            "process_tree": [
-                f"{file_name} (PID: 4012)",
-                "  └── powershell.exe -ExecutionPolicy Bypass (PID: 4056)"
-            ],
-            "risk_score": 15.0
+            "network_activity": [],
+            "file_system_changes": [],
+            "process_tree": [],
+            "risk_score": 0.0
         }
+
+        # Read file content to determine what simulation data is appropriate
+        file_content = ""
+        if file_path:
+            try:
+                with open(file_path, "rb") as f:
+                    raw = f.read(8192)  # Read first 8KB
+                try:
+                    file_content = raw.decode("utf-8", errors="ignore").lower()
+                except Exception:
+                    file_content = ""
+            except Exception:
+                pass
+
+        # Check for indicators in the actual file content
+        has_powershell = "powershell" in file_content
+        has_cmd = "cmd.exe" in file_content
+        has_http = "http://" in file_content or "https://" in file_content
+        has_network = "ping" in file_content or "curl" in file_content or "wget" in file_content
+        has_file_ops = "echo" in file_content and ">" in file_content
+        has_registry = "reg add" in file_content or "regedit" in file_content
+
+        risk = 0.0
+
+        # Build proportional behavioral data based on actual file content
+        if has_powershell or has_cmd:
+            data["process_tree"].append(f"{file_name} (PID: 4012)")
+            if has_powershell:
+                data["process_tree"].append("  └── powershell.exe -ExecutionPolicy Bypass (PID: 4056)")
+                risk += 15.0
+            if has_cmd:
+                data["process_tree"].append("  └── cmd.exe /c (PID: 4078)")
+                risk += 5.0
+
+        if has_http or has_network:
+            if has_http:
+                data["network_activity"].append("HTTP GET http://checkip.dyndns.org/")
+                risk += 10.0
+            if has_network:
+                data["network_activity"].append("DNS Query: dns.msftncsi.com")
+                risk += 5.0
+
+        if has_file_ops:
+            data["file_system_changes"].append(f"Created: C:\\Users\\Public\\{file_name}.tmp")
+            risk += 5.0
+
+        if has_registry:
+            data["file_system_changes"].append("Modified: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run")
+            risk += 20.0
+
+        data["risk_score"] = min(risk, 100.0)
+        return data

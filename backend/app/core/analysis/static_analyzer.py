@@ -107,22 +107,19 @@ class StaticAnalyzer(AnalysisEngine):
                 "imports_sample": imports[:10]
             }
         except pefile.PEFormatError:
-            # For demo purposes, simulate PE data so the UI charts and entropy graphs render!
+            # File is NOT a valid PE — return honest non-PE data.
+            # Do NOT fabricate fake malicious indicators.
             return {
-                "is_pe": True,
-                "machine": "0x14c",
-                "timestamp": 1620000000,
-                "is_signed": False,
-                "anomalies": ["High entropy section .text (7.85) - Possible Packer", "Suspicious API: VirtualAlloc"],
-                "suspicious_imports": ["VirtualAlloc", "WriteProcessMemory"],
-                "number_of_sections": 3,
-                "sections": [
-                    {"name": ".text", "virtual_address": "0x1000", "virtual_size": "0x2000", "raw_size": 8192, "entropy": 7.85},
-                    {"name": ".rdata", "virtual_address": "0x3000", "virtual_size": "0x1000", "raw_size": 4096, "entropy": 4.12},
-                    {"name": ".data", "virtual_address": "0x4000", "virtual_size": "0x1000", "raw_size": 4096, "entropy": 2.34}
-                ],
-                "imports_count": 12,
-                "imports_sample": ["kernel32.dll:VirtualAlloc", "kernel32.dll:WriteProcessMemory"]
+                "is_pe": False,
+                "machine": "N/A",
+                "timestamp": None,
+                "is_signed": None,
+                "anomalies": [],
+                "suspicious_imports": [],
+                "number_of_sections": 0,
+                "sections": [],
+                "imports_count": 0,
+                "imports_sample": []
             }
         except Exception as e:
             # Check if pe exists and try to close

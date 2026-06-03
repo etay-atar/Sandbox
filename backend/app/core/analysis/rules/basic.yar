@@ -19,3 +19,13 @@ rule IsPE {
     condition:
         $mz at 0
 }
+
+rule MaliciousTestMarker {
+    meta:
+        description = "Detects the specific test marker string for the malicious payload"
+        author = "Sandbox"
+    strings:
+        $marker = "THIS_IS_A_MALICIOUS_TEST_PAYLOAD"
+    condition:
+        $marker
+}
