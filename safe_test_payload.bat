@@ -18,3 +18,4 @@ exit
 
 :: Added to bypass deduplication cache
 :: Added again to bypass the cache from the previous simulated run
+:: Added a third time to test the real network monitoring

@@ -12,7 +12,7 @@ from sqlalchemy import select, desc
 
 from app.api import deps
 from app.db.session import get_db
-from app.models.models import User, Submission, SubmissionStatus, Verdict
+from app.models.models import User, Submission, SubmissionStatus, Verdict, AuditLog
 from app.schemas import schemas
 from app.services.storage import storage_service
 from app.core.analysis.mock_analyzer import MockAnalyzer
@@ -24,6 +24,32 @@ ANALYSIS_MODE = "REAL"  # Options: MOCK, REAL
 
 mock_analyzer = MockAnalyzer()
 real_analyzer = StaticAnalyzer()
+
+# --- Magic Bytes Detection (Spec 2.3 Phase 1) ---
+# Maps file signatures to MIME types without requiring python-magic C library
+MAGIC_SIGNATURES = [
+    (b'MZ',                        'application/x-dosexec'),      # PE (EXE/DLL)
+    (b'\x7fELF',                   'application/x-elf'),          # Linux ELF
+    (b'%PDF',                      'application/pdf'),            # PDF
+    (b'PK\x03\x04',               'application/zip'),            # ZIP/DOCX/XLSX
+    (b'\xd0\xcf\x11\xe0',         'application/msword'),         # OLE2 (DOC/XLS)
+    (b'\x89PNG',                   'image/png'),
+    (b'\xff\xd8\xff',             'image/jpeg'),
+    (b'GIF8',                      'image/gif'),
+    (b'Rar!',                      'application/x-rar-compressed'),
+]
+
+def detect_file_type(content: bytes) -> str:
+    """Detect actual file type using magic bytes (Spec Phase 1 validation)."""
+    for signature, mime_type in MAGIC_SIGNATURES:
+        if content[:len(signature)] == signature:
+            return mime_type
+    # Check if it looks like a script/text
+    try:
+        content[:512].decode('utf-8')
+        return 'text/plain'
+    except (UnicodeDecodeError, ValueError):
+        return 'application/octet-stream'
 
 router = APIRouter()
 
@@ -62,6 +88,9 @@ async def submit_file(
     4. Create DB Entry.
     5. Push to Queue (Mock: Just set status to Queued).
     """
+    if current_user.role == "Auditor":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Auditors cannot upload files")
+
     # 1. Read File
     contents = await file.read()
     sha256_hash = hashlib.sha256(contents).hexdigest()
@@ -80,10 +109,14 @@ async def submit_file(
     storage_filename = f"{sha256_hash}.bin"
     storage_service.upload_file(contents, storage_filename)
     
+    # 3b. Detect file type via magic bytes (Spec 2.3 Phase 1)
+    file_type_magic = detect_file_type(contents)
+    
     # 4. Create DB Entry
     submission = Submission(
         filename=file.filename,
         file_hash_sha256=sha256_hash,
+        file_type_magic=file_type_magic,
         user_id=current_user.user_id,
         status=SubmissionStatus.QUEUED,
         final_verdict=Verdict.PENDING
@@ -145,6 +178,14 @@ async def submit_file(
             submission.final_verdict = f"ERROR: {str(e)}"
             await db.commit()
 
+    audit_log = AuditLog(
+        user_id=current_user.user_id,
+        action="FILE_UPLOAD",
+        details=f"File {file.filename} uploaded with hash {sha256_hash}"
+    )
+    db.add(audit_log)
+    await db.commit()
+
     return submission
 
 @router.get("/{submission_id}/status", response_model=schemas.AnalysisStatus)
@@ -205,6 +246,14 @@ async def get_submission_report(
     if submission.status != SubmissionStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Analysis still in progress")
         
+    audit_log = AuditLog(
+        user_id=current_user.user_id,
+        action="REPORT_VIEW",
+        details=f"Viewed report for submission {submission_id} ({submission.filename})"
+    )
+    db.add(audit_log)
+    await db.commit()
+
     # Check for real analysis result
     result_query = await db.execute(select(AnalysisResult).where(AnalysisResult.submission_id == u_id))
     analysis_result = result_query.scalars().first()

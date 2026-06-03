@@ -36,13 +36,24 @@ async def login_access_token(
     if not user or not security.verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
-    # 3. Create Token
+    # 3. Log the login action
+    from app.models.models import AuditLog
+    audit_log = AuditLog(
+        user_id=user.user_id,
+        action="LOGIN",
+        details=f"Successful login for {user.username}"
+    )
+    db.add(audit_log)
+    await db.commit()
+
+    # 4. Create Token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.create_access_token(
             data={"sub": user.username}, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
+        "role": user.role
     }
 
 @router.post("/register", response_model=schemas.UserResponse)

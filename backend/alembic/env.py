@@ -10,7 +10,7 @@ from alembic import context
 # IMPORT THE APP CONFIG AND MODELS
 from app.core.config import settings
 from app.db.session import Base
-from app.models.models import User, Submission  # Import models to ensure they are registered
+from app.models.models import User, Submission, AnalysisResult, AuditLog, TestResult, IOC  # Import models to ensure they are registered
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

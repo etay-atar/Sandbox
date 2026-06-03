@@ -8,5 +8,6 @@ docker-compose down
 Write-Host "2. Terminating Frontend and Backend processes..." -ForegroundColor Cyan
 taskkill /F /IM node.exe /T 2>$null
 taskkill /F /IM python.exe /T 2>$null
+taskkill /F /IM celery.exe /T 2>$null
 
 Write-Host "✅ All Sandbox services have been stopped!" -ForegroundColor Green

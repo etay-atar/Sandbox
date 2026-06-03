@@ -172,5 +172,5 @@ class DynamicAnalyzer(AnalysisEngine):
                 f"{file_name} (PID: 4012)",
                 "  └── powershell.exe -ExecutionPolicy Bypass (PID: 4056)"
             ],
-            "risk_score": 75.0
+            "risk_score": 15.0
         }

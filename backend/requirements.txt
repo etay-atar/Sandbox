@@ -4,8 +4,13 @@
 # Web Framework & API
 # -------------------
 fastapi==0.109.0        # High-performance Async Web Framework
-uvicorn[standard]==0.27.0 # ASGI Server for running FastAPI
-python-multipart==0.0.6 # For handling file uploads (multipart/form-data)
+uvicorn[standard]==0.27.0 # ASGI server
+
+# Encryption at Rest
+cryptography==42.0.5
+
+# Utilities
+python-multipart==0.0.96 # For handling file uploads (multipart/form-data)
 
 # Database & ORM
 # --------------
@@ -30,6 +35,11 @@ argon2-cffi==23.1.0     # Argon2 password hashing (Better than bcrypt)
 pefile==2023.2.7        # Windows PE Header Parser
 yara-python==4.5.4      # YARA pattern matching
 
+# AI & Deep Learning (MalConv)
+# ----------------------------
+torch==2.3.0
+torchvision==0.18.0
+
 # Utilities
 # ---------
 pydantic==2.5.3         # Data validation and settings management
@@ -37,6 +47,7 @@ pydantic-settings==2.1.0 # Environment variable management
 email-validator==2.1.0.post1 # Support for EmailStr
 requests==2.31.0        # Synchronous HTTP client (for specific blocking tasks or checks)
 httpx==0.26.0           # Async HTTP client (for calling usage in async functions)
+aiohttp==3.9.3          # Async HTTP client (used by VirusTotal API integration)
 
 # Testing
 # -------

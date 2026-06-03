@@ -44,11 +44,15 @@ class Settings(BaseSettings):
     MINIO_BUCKET_NAME: str = "malware-samples"
     MINIO_SECURE: bool = False # False for local dev (HTTP), True for Prod (HTTPS)
 
+    # External APIs
+    VT_API_KEY: str | None = None
+
     # Config loading
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=True
+        case_sensitive=True,
+        extra="ignore"
     )
 
 settings = Settings()

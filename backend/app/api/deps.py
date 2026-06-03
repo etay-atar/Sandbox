@@ -70,3 +70,16 @@ async def get_current_admin_user(
             detail="The user does not have enough privileges"
         )
     return current_user
+
+async def get_current_auditor_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Dependency that enforces Auditor role.
+    """
+    if current_user.role != "Auditor" and current_user.role != "Admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="The user does not have enough privileges"
+        )
+    return current_user

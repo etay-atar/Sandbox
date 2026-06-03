@@ -8,6 +8,7 @@ export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState(''); // Only during registration
+    const [role, setRole] = useState('Analyst'); // Default role
     
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function Login() {
             if (isRegistering) {
                 // EXPLICIT REGISTRATION
                 try {
-                    await api.post('/auth/register', { username, password, email, role: 'Analyst' });
+                    await api.post('/auth/register', { username, password, email, role });
                     setSuccessMsg('Registration successful! Logging in...');
                 } catch (registerError: any) {
                     setError(registerError.response?.data?.detail || 'Registration failed due to strict password requirements.');
@@ -40,7 +41,7 @@ export default function Login() {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
-            login(res.data.access_token, username);
+            login(res.data.access_token, username, res.data.role || 'Analyst');
             navigate('/');
         } catch (err: any) {
             console.error(err);
@@ -98,16 +99,30 @@ export default function Login() {
                     </div>
 
                     {isRegistering && (
-                        <div className="group animate-slide-up">
-                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2 group-focus-within:text-primary-400 transition-colors">Email Address</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                                className="input-premium"
-                                placeholder="analyst@domain.com"
-                                required
-                            />
+                        <div className="space-y-5 animate-slide-up">
+                            <div className="group">
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2 group-focus-within:text-primary-400 transition-colors">Email Address</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    className="input-premium"
+                                    placeholder="analyst@domain.com"
+                                    required
+                                />
+                            </div>
+                            <div className="group">
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2 group-focus-within:text-primary-400 transition-colors">Clearance Level (Role)</label>
+                                <select
+                                    value={role}
+                                    onChange={e => setRole(e.target.value)}
+                                    className="input-premium appearance-none bg-gray-900"
+                                >
+                                    <option value="Analyst">Analyst (Standard Operations)</option>
+                                    <option value="Auditor">Auditor (Read-Only Compliance)</option>
+                                    <option value="Admin">Administrator (Full Access)</option>
+                                </select>
+                            </div>
                         </div>
                     )}
 

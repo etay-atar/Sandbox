@@ -10,7 +10,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    login: (token: string, username: string) => void;
+    login: (token: string, username: string, role: string) => void;
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -23,23 +23,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
+        const storedRole = localStorage.getItem('role') || 'Analyst';
+        const storedUsername = localStorage.getItem('username') || 'Analyst';
         if (storedToken) {
             setToken(storedToken);
-            // Optional: Fetch user profile here if you have a /me endpoint
-            // For now, we assume simple persistence or decode token if needed
-            setUser({ username: 'Analyst', role: 'Analyst' });
+            setUser({ username: storedUsername, role: storedRole });
+            api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         }
     }, []);
 
-    const login = (newToken: string, username: string) => {
+    const login = (newToken: string, username: string, role: string) => {
         localStorage.setItem('token', newToken);
+        localStorage.setItem('role', role);
+        localStorage.setItem('username', username);
         setToken(newToken);
-        setUser({ username, role: 'Analyst' });
+        setUser({ username, role });
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     };
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('username');
         setToken(null);
         setUser(null);
         delete api.defaults.headers.common['Authorization'];

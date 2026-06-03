@@ -9,6 +9,12 @@ from minio import Minio
 from minio.error import S3Error
 from app.core.config import settings
 import io
+import os
+from cryptography.fernet import Fernet
+
+# Development encryption key (In production this would be injected via AWS KMS or HashiCorp Vault)
+STORAGE_ENCRYPTION_KEY = b'G-x9Yh-4BwR2bF_zJ7wL8uWfK_yB4rGq2P9vZ5cM1a0='
+cipher_suite = Fernet(STORAGE_ENCRYPTION_KEY)
 
 class StorageService:
     def __init__(self):
@@ -49,20 +55,28 @@ class StorageService:
             str: The object name (filename) if successful.
         """
         try:
-            # Wrap bytes in BytesIO
-            data_stream = io.BytesIO(file_data)
+            # 1. Encrypt the raw bytes before they hit the disk/storage layer
+            encrypted_data = cipher_suite.encrypt(file_data)
+            
+            # 2. Wrap encrypted bytes in BytesIO
+            data_stream = io.BytesIO(encrypted_data)
             
             self.client.put_object(
                 bucket_name=self.bucket,
                 object_name=filename,
                 data=data_stream,
-                length=len(file_data),
+                length=len(encrypted_data),
                 content_type=content_type
             )
             return filename
-        except S3Error as e:
-            # In a real app, log this error specifically
-            raise e
+        except Exception as e:
+            print(f"MinIO upload failed, falling back to local storage: {e}")
+            import os
+            fallback_dir = r"C:\Users\itaya\.gemini\antigravity\scratch\Sandbox\backend\local_storage"
+            os.makedirs(fallback_dir, exist_ok=True)
+            with open(os.path.join(fallback_dir, filename), "wb") as f:
+                f.write(encrypted_data)
+            return filename
 
     def get_file_url(self, filename: str) -> str:
         """
@@ -88,13 +102,24 @@ class StorageService:
             filename: The object name.
             
         Returns:
-            bytes: The file contents.
+            bytes: The decrypted file contents.
         """
         try:
             response = self.client.get_object(self.bucket, filename)
-            return response.read()
-        except S3Error as e:
+            encrypted_data = response.read()
+            
+            # Decrypt in memory before returning to the analysis engine
+            decrypted_data = cipher_suite.decrypt(encrypted_data)
+            return decrypted_data
+        except Exception as e:
             print(f"Error downloading {filename} from minio: {e}")
+            import os
+            fallback_path = os.path.join(r"C:\Users\itaya\.gemini\antigravity\scratch\Sandbox\backend\local_storage", filename)
+            if os.path.exists(fallback_path):
+                with open(fallback_path, "rb") as f:
+                    encrypted_data = f.read()
+                decrypted_data = cipher_suite.decrypt(encrypted_data)
+                return decrypted_data
             return None
         finally:
             if 'response' in locals() and hasattr(response, 'close'):

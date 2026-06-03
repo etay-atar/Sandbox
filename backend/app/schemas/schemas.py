@@ -24,10 +24,14 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+class UserRoleUpdate(BaseModel):
+    role: UserRole
+
 # --- Token Schemas ---
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: str
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -42,10 +46,11 @@ class SubmissionCreate(SubmissionBase):
 class SubmissionResponse(BaseModel):
     submission_id: UUID4
     filename: str
+    file_hash_sha256: str
+    file_type_magic: Optional[str] = None
     status: SubmissionStatus
     final_verdict: str
     created_at: datetime
-    # We might add file_hash_sha256 if needed
 
     class Config:
         from_attributes = True
@@ -53,3 +58,23 @@ class SubmissionResponse(BaseModel):
 class AnalysisStatus(BaseModel):
     status: SubmissionStatus
     progress: int # 0-100
+
+# --- Test Result Schemas (Spec Section 3.2, Table 4) ---
+class TestResultResponse(BaseModel):
+    test_name: str
+    category: str
+    test_status: bool
+    details: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+# --- IOC Schemas (Spec Section 3.2, Table 5) ---
+class IOCResponse(BaseModel):
+    ioc_id: UUID4
+    type: str
+    value: str
+    confidence_score: Optional[int] = None
+
+    class Config:
+        from_attributes = True
