@@ -67,5 +67,5 @@ Once the VM is perfectly configured, vulnerable, and sitting on the desktop:
 
 ---
 
-### 🎉 You are done!
+###  You are done!
 Once this snapshot is created, you can close VirtualBox. The Python backend will orchestrate everything in the background using headless mode.
